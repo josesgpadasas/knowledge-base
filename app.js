@@ -1435,18 +1435,6 @@ function filterLandingCentersMarkers() {
   }
 }
 
-// Create a custom icon for markers - using smaller blue pin marker
-function createLandingCenterIcon(L) {
-  return L.icon({
-    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
-    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-    iconSize: [18, 30],
-    iconAnchor: [9, 30],
-    popupAnchor: [1, -26],
-    shadowSize: [30, 30]
-  });
-}
-
 // Create a marker for a landing center
 function createLandingCenterMarker(row, L) {
   const lat = parseFloat(row.LAT);
@@ -1473,7 +1461,14 @@ function createLandingCenterMarker(row, L) {
   `;
 
   return L.marker([lat, lng], {
-    icon: createLandingCenterIcon(L)
+    icon: L.icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconSize: [15, 25],
+      iconAnchor: [7, 25],
+      popupAnchor: [1, -20],
+      shadowSize: [25, 25]
+    })
   }).bindPopup(popupContent);
 }
 
