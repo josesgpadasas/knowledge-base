@@ -1697,11 +1697,14 @@
   /* === LANDING CENTERS PAGE === */
   /* Sticky sidebar for filters */
   .landing-centers-sidebar {
-    min-height: 800px;
-    max-height: calc(100vh - 200px);
+    height: 800px;
+    max-height: 800px;
     overflow-y: auto;
+    overflow-x: hidden;
     display: flex;
     flex-direction: column;
+    width: 100%;
+    box-sizing: border-box;
   }
   
   /* Ensure filters container fills available space */
@@ -1709,11 +1712,33 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    overflow-x: hidden;
+    min-height: 0;
+    width: 100%;
+    box-sizing: border-box;
   }
   
   /* Push filter summary to bottom */
   .landing-centers-sidebar #filter-summary {
     margin-top: auto;
+    width: 100%;
+    box-sizing: border-box;
+  }
+  
+  /* Prevent horizontal overflow in filter inputs */
+  .landing-centers-sidebar .form-control,
+  .landing-centers-sidebar .form-select {
+    max-width: 100%;
+    overflow-x: hidden;
+    word-wrap: break-word;
+    box-sizing: border-box;
+  }
+  
+  /* Ensure filter items don't cause overflow */
+  .landing-centers-sidebar .mb-3 {
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
   }
 
   /* Custom scrollbar for sidebar */
@@ -1739,8 +1764,8 @@
   @media (max-width: 991.98px) {
     .landing-centers-sidebar {
       position: relative !important;
-      max-height: none;
-      min-height: 600px;
+      height: 600px;
+      max-height: 600px;
       margin-bottom: 1.5rem;
     }
 
@@ -1751,7 +1776,8 @@
 
   @media (max-width: 767.98px) {
     .landing-centers-sidebar {
-      min-height: 500px;
+      height: 500px;
+      max-height: 500px;
     }
 
     #landing-centers-map {
