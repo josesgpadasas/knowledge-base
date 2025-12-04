@@ -1435,33 +1435,15 @@ function filterLandingCentersMarkers() {
   }
 }
 
-// Create a custom fish icon for markers using Font Awesome
-function createFishIcon(L) {
-  return L.divIcon({
-    className: 'fish-marker-icon',
-    html: `
-      <div style="
-        width: 50px;
-        height: 50px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        background: linear-gradient(135deg, rgba(9, 132, 227, 0.9) 0%, rgba(0, 206, 201, 0.9) 100%);
-        border-radius: 50%;
-        border: 3px solid white;
-        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
-        position: relative;
-      ">
-        <i class="fas fa-fish" style="
-          font-size: 24px;
-          color: white;
-          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-        "></i>
-      </div>
-    `,
-    iconSize: [50, 50],
-    iconAnchor: [25, 50],
-    popupAnchor: [0, -50]
+// Create a custom icon for markers - using smaller blue pin marker
+function createLandingCenterIcon(L) {
+  return L.icon({
+    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+    iconSize: [18, 30],
+    iconAnchor: [9, 30],
+    popupAnchor: [1, -26],
+    shadowSize: [30, 30]
   });
 }
 
@@ -1491,7 +1473,7 @@ function createLandingCenterMarker(row, L) {
   `;
 
   return L.marker([lat, lng], {
-    icon: createFishIcon(L)
+    icon: createLandingCenterIcon(L)
   }).bindPopup(popupContent);
 }
 
