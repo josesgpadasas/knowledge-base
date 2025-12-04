@@ -1395,6 +1395,7 @@ function loadLeaflet() {
 // Global storage for landing centers data
 window.landingCentersData = [];
 window.allLandingCentersMarkers = [];
+window.currentTileLayer = null; // Store current tile layer for base map switching
 
 // Filter and update markers on map
 function filterLandingCentersMarkers() {
@@ -1683,11 +1684,44 @@ async function loadLandingCenters() {
     
     window.landingCentersMap = L.map('landing-centers-map').setView([firstLat, firstLng], 6);
 
-    // Add tile layer (OpenStreetMap)
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
-      maxZoom: 19
-    }).addTo(window.landingCentersMap);
+    // Define base map options
+    const baseMaps = {
+      'OpenStreetMap': L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        maxZoom: 19
+      }),
+      'CartoDB Positron': L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+      }),
+      'CartoDB Dark Matter': L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+        subdomains: 'abcd',
+        maxZoom: 20
+      }),
+      'Esri World Imagery': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community',
+        maxZoom: 19
+      }),
+      'Esri World Street Map': L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Street_Map/MapServer/tile/{z}/{y}/{x}', {
+        attribution: 'Tiles &copy; Esri &mdash; Source: Esri, DeLorme, NAVTEQ, USGS, Intermap, iPC, NRCAN, Esri Japan, METI, Esri China (Hong Kong), Esri (Thailand), TomTom, 2012',
+        maxZoom: 19
+      }),
+      'Stamen Terrain': L.tileLayer('https://stamen-tiles-{s}.a.ssl.fastly.net/terrain/{z}/{x}/{y}{r}.png', {
+        attribution: 'Map tiles by <a href="http://stamen.com">Stamen Design</a>, <a href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a> &mdash; Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+        subdomains: 'abcd',
+        maxZoom: 18
+      })
+    };
+
+    // Add default tile layer (OpenStreetMap)
+    window.currentTileLayer = baseMaps['OpenStreetMap'];
+    window.currentTileLayer.addTo(window.landingCentersMap);
+    window.baseMaps = baseMaps; // Store for base map selector
+
+    // Add base map selector control
+    createBaseMapSelector();
 
     // Resize map to ensure it fills container properly
     setTimeout(() => {
@@ -1706,6 +1740,63 @@ async function loadLandingCenters() {
     loadingEl.style.display = 'none';
     errorEl.classList.remove('d-none');
     errorMessageEl.textContent = err.message || 'Failed to load landing centers data. Please try again later.';
+  }
+}
+
+// Create base map selector control
+function createBaseMapSelector() {
+  if (!window.landingCentersMap || !window.baseMaps) return;
+
+  // Create custom control
+  const BaseMapControl = L.Control.extend({
+    onAdd: function(map) {
+      const container = L.DomUtil.create('div', 'leaflet-bar leaflet-control leaflet-control-custom basemap-selector');
+      container.innerHTML = `
+        <select id="basemap-selector" class="basemap-select">
+          <option value="OpenStreetMap">OpenStreetMap</option>
+          <option value="CartoDB Positron">CartoDB Positron</option>
+          <option value="CartoDB Dark Matter">CartoDB Dark Matter</option>
+          <option value="Esri World Imagery">Satellite Imagery</option>
+          <option value="Esri World Street Map">Esri Street Map</option>
+          <option value="Stamen Terrain">Terrain</option>
+        </select>
+      `;
+      
+      // Prevent map drag when interacting with control
+      L.DomEvent.disableClickPropagation(container);
+      L.DomEvent.disableScrollPropagation(container);
+      
+      // Add change event listener
+      const select = container.querySelector('#basemap-selector');
+      select.addEventListener('change', function(e) {
+        switchBaseMap(e.target.value);
+      });
+      
+      return container;
+    }
+  });
+
+  // Add control to map (position: top-left, near zoom controls)
+  new BaseMapControl({ position: 'topleft' }).addTo(window.landingCentersMap);
+}
+
+// Switch base map
+function switchBaseMap(mapName) {
+  if (!window.landingCentersMap || !window.baseMaps || !window.currentTileLayer) return;
+
+  // Remove current tile layer
+  window.landingCentersMap.removeLayer(window.currentTileLayer);
+  
+  // Add new tile layer
+  window.currentTileLayer = window.baseMaps[mapName];
+  if (window.currentTileLayer) {
+    window.currentTileLayer.addTo(window.landingCentersMap);
+    
+    // Update selector value to match current map
+    const selector = document.getElementById('basemap-selector');
+    if (selector) {
+      selector.value = mapName;
+    }
   }
 }
 
