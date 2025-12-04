@@ -1435,6 +1435,44 @@ function filterLandingCentersMarkers() {
   }
 }
 
+// Create a custom fish icon for markers
+function createFishIcon(L) {
+  return L.divIcon({
+    className: 'fish-marker-icon',
+    html: `
+      <div style="
+        width: 50px;
+        height: 50px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.3));
+      ">
+        <svg width="50" height="50" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <linearGradient id="fishGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#0984e3;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#00cec9;stop-opacity:1" />
+            </linearGradient>
+          </defs>
+          <!-- Fish body -->
+          <ellipse cx="50" cy="50" rx="30" ry="20" fill="url(#fishGradient)" stroke="white" stroke-width="3"/>
+          <!-- Fish tail -->
+          <path d="M 80 50 L 95 35 L 95 65 Z" fill="url(#fishGradient)" stroke="white" stroke-width="3"/>
+          <!-- Fish eye -->
+          <circle cx="60" cy="45" r="6" fill="white"/>
+          <circle cx="62" cy="43" r="3" fill="#151269"/>
+          <!-- Fish fin -->
+          <path d="M 40 35 Q 45 30 50 35 Q 45 40 40 35" fill="rgba(255, 255, 255, 0.5)" stroke="white" stroke-width="2"/>
+        </svg>
+      </div>
+    `,
+    iconSize: [50, 50],
+    iconAnchor: [25, 25],
+    popupAnchor: [0, -25]
+  });
+}
+
 // Create a marker for a landing center
 function createLandingCenterMarker(row, L) {
   const lat = parseFloat(row.LAT);
@@ -1461,14 +1499,7 @@ function createLandingCenterMarker(row, L) {
   `;
 
   return L.marker([lat, lng], {
-    icon: L.icon({
-      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-      iconSize: [25, 41],
-      iconAnchor: [12, 41],
-      popupAnchor: [1, -34],
-      shadowSize: [41, 41]
-    })
+    icon: createFishIcon(L)
   }).bindPopup(popupContent);
 }
 
