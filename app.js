@@ -1376,6 +1376,102 @@ function loadLeaflet() {
   });
 }
 
+// Global storage for landing centers data
+window.landingCentersData = [];
+window.allLandingCentersMarkers = [];
+
+// Filter and update markers on map
+function filterLandingCentersMarkers() {
+  if (!window.landingCentersMap || !window.L) return;
+
+  const fmaFilter = document.getElementById('filter-fma')?.value || '';
+  const regionFilter = document.getElementById('filter-region')?.value || '';
+  const provinceFilter = document.getElementById('filter-province')?.value || '';
+  const fishingGroundFilter = document.getElementById('filter-fishing-ground')?.value || '';
+  const cityMunFilter = (document.getElementById('filter-city-mun')?.value || '').trim().toLowerCase();
+  const landingCenterFilter = (document.getElementById('filter-landing-center')?.value || '').trim().toLowerCase();
+
+  // Filter data based on selected filters
+  const filteredData = window.landingCentersData.filter(row => {
+    if (fmaFilter && row.FMA !== fmaFilter) return false;
+    if (regionFilter && row.REGION !== regionFilter) return false;
+    if (provinceFilter && row.PROVINCE !== provinceFilter) return false;
+    if (fishingGroundFilter && row.FISHING_GROUND !== fishingGroundFilter) return false;
+    if (cityMunFilter && !(row.CITY_MUN || '').toLowerCase().includes(cityMunFilter)) return false;
+    if (landingCenterFilter && !(row.LANDING_CENTER || '').toLowerCase().includes(landingCenterFilter)) return false;
+    return true;
+  });
+
+  // Remove all markers from map
+  window.allLandingCentersMarkers.forEach(marker => {
+    window.landingCentersMap.removeLayer(marker);
+  });
+
+  // Add filtered markers
+  window.allLandingCentersMarkers = [];
+  const L = window.L;
+
+  filteredData.forEach(row => {
+    const marker = createLandingCenterMarker(row, L);
+    if (marker) {
+      marker.addTo(window.landingCentersMap);
+      window.allLandingCentersMarkers.push(marker);
+    }
+  });
+
+  // Update counts
+  const markerCountEl = document.getElementById('marker-count');
+  const filteredCountEl = document.getElementById('filtered-count');
+  const totalCountEl = document.getElementById('total-count');
+
+  if (markerCountEl) markerCountEl.textContent = window.allLandingCentersMarkers.length;
+  if (filteredCountEl) filteredCountEl.textContent = window.allLandingCentersMarkers.length;
+  if (totalCountEl) totalCountEl.textContent = window.landingCentersData.length;
+
+  // Fit map bounds to show filtered markers
+  if (window.allLandingCentersMarkers.length > 0) {
+    const group = new L.featureGroup(window.allLandingCentersMarkers);
+    window.landingCentersMap.fitBounds(group.getBounds().pad(0.1));
+  }
+}
+
+// Create a marker for a landing center
+function createLandingCenterMarker(row, L) {
+  const lat = parseFloat(row.LAT);
+  const lng = parseFloat(row.LONG);
+
+  if (isNaN(lat) || isNaN(lng)) return null;
+
+  const popupContent = `
+    <div style="min-width: 200px;">
+      <h6 class="fw-bold mb-2" style="color: #151269;">${escapeHtml(row.LANDING_CENTER || 'N/A')}</h6>
+      <div class="small">
+        <div class="mb-1"><strong>Region:</strong> ${escapeHtml(row.REGION || 'N/A')}</div>
+        <div class="mb-1"><strong>Province:</strong> ${escapeHtml(row.PROVINCE || 'N/A')}</div>
+        <div class="mb-1"><strong>City/Municipality:</strong> ${escapeHtml(row.CITY_MUN || 'N/A')}</div>
+        <div class="mb-1"><strong>Fishing Ground:</strong> ${escapeHtml(row.FISHING_GROUND || 'N/A')}</div>
+        <div class="mb-1"><strong>FMA:</strong> ${escapeHtml(row.FMA || 'N/A')}</div>
+        <div class="mt-2 pt-2 border-top">
+          <small class="text-muted">
+            <i class="bi bi-geo-alt"></i> ${lat.toFixed(6)}, ${lng.toFixed(6)}
+          </small>
+        </div>
+      </div>
+    </div>
+  `;
+
+  return L.marker([lat, lng], {
+    icon: L.icon({
+      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+      iconSize: [25, 41],
+      iconAnchor: [12, 41],
+      popupAnchor: [1, -34],
+      shadowSize: [41, 41]
+    })
+  }).bindPopup(popupContent);
+}
+
 async function loadLandingCenters() {
   const mapContainer = document.getElementById('landing-centers-map');
   const loadingEl = document.getElementById('map-loading');
@@ -1393,8 +1489,11 @@ async function loadLandingCenters() {
   if (!window.landingCentersMap) {
     window.landingCentersMap = null;
   }
-  if (!window.mapMarkers) {
-    window.mapMarkers = [];
+  if (!window.allLandingCentersMarkers) {
+    window.allLandingCentersMarkers = [];
+  }
+  if (!window.landingCentersData) {
+    window.landingCentersData = [];
   }
 
   try {
@@ -1439,16 +1538,101 @@ async function loadLandingCenters() {
       return;
     }
 
+    // Store valid data globally
+    window.landingCentersData = validData;
+
+    // Populate filter dropdowns
+    const fmas = [...new Set(validData.map(r => r.FMA).filter(Boolean))].sort();
+    const regions = [...new Set(validData.map(r => r.REGION).filter(Boolean))].sort();
+    const fishingGrounds = [...new Set(validData.map(r => r.FISHING_GROUND).filter(Boolean))].sort();
+
+    const fmaSelect = document.getElementById('filter-fma');
+    const regionSelect = document.getElementById('filter-region');
+    const provinceSelect = document.getElementById('filter-province');
+    const fishingGroundSelect = document.getElementById('filter-fishing-ground');
+
+    if (fmaSelect) {
+      fmaSelect.innerHTML = '<option value="">All FMAs</option>' + 
+        fmas.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join('');
+    }
+
+    if (regionSelect) {
+      regionSelect.innerHTML = '<option value="">All Regions</option>' + 
+        regions.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('');
+    }
+
+    if (fishingGroundSelect) {
+      fishingGroundSelect.innerHTML = '<option value="">All Fishing Grounds</option>' + 
+        fishingGrounds.map(fg => `<option value="${escapeHtml(fg)}">${escapeHtml(fg)}</option>`).join('');
+    }
+
+    // Handle region change to populate provinces
+    if (regionSelect && provinceSelect) {
+      regionSelect.addEventListener('change', () => {
+        const selectedRegion = regionSelect.value;
+        provinceSelect.innerHTML = '<option value="">All Provinces</option>';
+        provinceSelect.disabled = !selectedRegion;
+
+        if (selectedRegion) {
+          const provinces = [...new Set(
+            validData
+              .filter(r => r.REGION === selectedRegion)
+              .map(r => r.PROVINCE)
+              .filter(Boolean)
+          )].sort();
+          
+          provinces.forEach(prov => {
+            const opt = document.createElement('option');
+            opt.value = prov;
+            opt.textContent = prov;
+            provinceSelect.appendChild(opt);
+          });
+        }
+
+        filterLandingCentersMarkers();
+      });
+    }
+
+    // Add event listeners to all filters
+    const filterInputs = ['filter-fma', 'filter-region', 'filter-province', 'filter-fishing-ground', 
+                          'filter-city-mun', 'filter-landing-center'];
+    filterInputs.forEach(filterId => {
+      const el = document.getElementById(filterId);
+      if (el) {
+        el.addEventListener('input', debounce(filterLandingCentersMarkers, 300));
+        el.addEventListener('change', filterLandingCentersMarkers);
+      }
+    });
+
+    // Reset filters button
+    const resetBtn = document.getElementById('reset-filters');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        filterInputs.forEach(filterId => {
+          const el = document.getElementById(filterId);
+          if (el) {
+            el.value = '';
+            if (el.tagName === 'SELECT') {
+              el.disabled = filterId === 'filter-province';
+            }
+          }
+        });
+        if (provinceSelect) {
+          provinceSelect.innerHTML = '<option value="">All Provinces (select region first)</option>';
+        }
+        filterLandingCentersMarkers();
+      });
+    }
+
     // Hide loading, show map
     loadingEl.style.display = 'none';
     mapContainer.style.display = 'block';
     infoEl.classList.remove('d-none');
-    markerCountEl.textContent = validData.length;
 
     // Clean up existing map if it exists
     if (window.landingCentersMap) {
       window.landingCentersMap.remove();
-      window.mapMarkers = [];
+      window.allLandingCentersMarkers = [];
     }
 
     // Initialize map (center on first marker)
@@ -1463,54 +1647,10 @@ async function loadLandingCenters() {
       maxZoom: 19
     }).addTo(window.landingCentersMap);
 
-    // Add markers for each valid landing center
-    validData.forEach(row => {
-      const lat = parseFloat(row.LAT);
-      const lng = parseFloat(row.LONG);
-      
-      // Create popup content
-      const popupContent = `
-        <div style="min-width: 200px;">
-          <h6 class="fw-bold mb-2" style="color: #151269;">${escapeHtml(row.LANDING_CENTER || 'N/A')}</h6>
-          <div class="small">
-            <div class="mb-1"><strong>Region:</strong> ${escapeHtml(row.REGION || 'N/A')}</div>
-            <div class="mb-1"><strong>Province:</strong> ${escapeHtml(row.PROVINCE || 'N/A')}</div>
-            <div class="mb-1"><strong>City/Municipality:</strong> ${escapeHtml(row.CITY_MUN || 'N/A')}</div>
-            <div class="mb-1"><strong>Fishing Ground:</strong> ${escapeHtml(row.FISHING_GROUND || 'N/A')}</div>
-            <div class="mb-1"><strong>FMA:</strong> ${escapeHtml(row.FMA || 'N/A')}</div>
-            <div class="mt-2 pt-2 border-top">
-              <small class="text-muted">
-                <i class="bi bi-geo-alt"></i> ${lat.toFixed(6)}, ${lng.toFixed(6)}
-              </small>
-            </div>
-          </div>
-        </div>
-      `;
+    // Initial load - add all markers
+    filterLandingCentersMarkers();
 
-      // Create marker with custom icon
-      const marker = L.marker([lat, lng], {
-        icon: L.icon({
-          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
-          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-          iconSize: [25, 41],
-          iconAnchor: [12, 41],
-          popupAnchor: [1, -34],
-          shadowSize: [41, 41]
-        })
-      })
-      .addTo(window.landingCentersMap)
-      .bindPopup(popupContent);
-
-      window.mapMarkers.push(marker);
-    });
-
-    // Fit map bounds to show all markers
-    if (window.mapMarkers.length > 0) {
-      const group = new L.featureGroup(window.mapMarkers);
-      window.landingCentersMap.fitBounds(group.getBounds().pad(0.1));
-    }
-
-    console.log(`Successfully loaded ${window.mapMarkers.length} landing centers on map`);
+    console.log(`Successfully loaded ${window.allLandingCentersMarkers.length} landing centers on map`);
 
   } catch (err) {
     console.error('Error loading landing centers:', err);
