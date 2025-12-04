@@ -174,6 +174,11 @@ class DataService {
     return this.getSheetData(this.config.SHEETS.FMA_PROFILE);
   }
 
+  // Get landing centers
+  async getLandingCenters() {
+    return this.getSheetData(this.config.SHEETS.LANDING_CENTERS);
+  }
+
   // Search across all sheets
   async searchAll(query) {
     query = query.toLowerCase().trim();
