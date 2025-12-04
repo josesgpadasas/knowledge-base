@@ -11,7 +11,8 @@ const ROUTES = {
   'search': 'search',
   'about': 'about',
   'learnmore': 'learnmore',
-  'fmaprofile': 'fmaprofile'
+  'fmaprofile': 'fmaprofile',
+  'landingcenters': 'landingcenters'
 };
 
 let currentToast = null;
@@ -138,6 +139,7 @@ function initPage(page, hash) {
   if (page === 'references') loadReferences();
   if (page === 'search') loadSearchResults(hash);
   if (page === 'fmaprofile') loadFMAProfile();
+  if (page === 'landingcenters') loadLandingCenters();
 }
 
 function updateActiveNavLink(page) {
@@ -1346,6 +1348,178 @@ async function loadFMAProfile() {
   }
 }
 
+// Load Leaflet library dynamically
+function loadLeaflet() {
+  return new Promise((resolve, reject) => {
+    // Check if Leaflet is already loaded
+    if (window.L && window.L.map) {
+      resolve(window.L);
+      return;
+    }
+
+    // Load CSS
+    const link = document.createElement('link');
+    link.rel = 'stylesheet';
+    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    link.integrity = 'sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=';
+    link.crossOrigin = '';
+    document.head.appendChild(link);
+
+    // Load JS
+    const script = document.createElement('script');
+    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+    script.crossOrigin = '';
+    script.onload = () => resolve(window.L);
+    script.onerror = () => reject(new Error('Failed to load Leaflet library'));
+    document.head.appendChild(script);
+  });
+}
+
+async function loadLandingCenters() {
+  const mapContainer = document.getElementById('landing-centers-map');
+  const loadingEl = document.getElementById('map-loading');
+  const errorEl = document.getElementById('map-error');
+  const errorMessageEl = document.getElementById('map-error-message');
+  const infoEl = document.getElementById('map-info');
+  const markerCountEl = document.getElementById('marker-count');
+
+  if (!mapContainer || !loadingEl) {
+    console.error('Landing centers page elements not found');
+    return;
+  }
+
+  // Initialize map variables if not already set
+  if (!window.landingCentersMap) {
+    window.landingCentersMap = null;
+  }
+  if (!window.mapMarkers) {
+    window.mapMarkers = [];
+  }
+
+  try {
+    console.log('Loading Landing Centers...');
+    
+    // Load Leaflet if not already loaded
+    const L = await loadLeaflet();
+    
+    const data = await dataService.getLandingCenters();
+    console.log('Landing Centers data received:', data);
+    
+    if (!data || data.length === 0) {
+      loadingEl.innerHTML = `
+        <div class="text-center py-5 text-muted">
+          <i class="bi bi-inbox display-6 d-block mb-2 opacity-50"></i>
+          <p class="mb-0">No landing centers data available.</p>
+          <small class="text-muted">Please check that the Landing_Centers sheet exists and has data.</small>
+        </div>
+      `;
+      return;
+    }
+
+    // Filter valid coordinates
+    const validData = data.filter(row => {
+      const coords = (row.COORDINATES || '').toString().trim().toUpperCase();
+      const lat = parseFloat(row.LAT);
+      const lng = parseFloat(row.LONG);
+      return coords === 'VALID' && !isNaN(lat) && !isNaN(lng) && 
+             lat >= -90 && lat <= 90 && lng >= -180 && lng <= 180;
+    });
+
+    console.log(`Filtered ${validData.length} valid landing centers from ${data.length} total rows`);
+
+    if (validData.length === 0) {
+      loadingEl.innerHTML = `
+        <div class="text-center py-5 text-muted">
+          <i class="bi bi-exclamation-circle display-6 d-block mb-2 opacity-50"></i>
+          <p class="mb-0">No landing centers with valid coordinates found.</p>
+          <small class="text-muted">Please ensure COORDINATES column is set to "VALID" and LAT/LONG values are valid.</small>
+        </div>
+      `;
+      return;
+    }
+
+    // Hide loading, show map
+    loadingEl.style.display = 'none';
+    mapContainer.style.display = 'block';
+    infoEl.classList.remove('d-none');
+    markerCountEl.textContent = validData.length;
+
+    // Clean up existing map if it exists
+    if (window.landingCentersMap) {
+      window.landingCentersMap.remove();
+      window.mapMarkers = [];
+    }
+
+    // Initialize map (center on first marker)
+    const firstLat = parseFloat(validData[0].LAT);
+    const firstLng = parseFloat(validData[0].LONG);
+    
+    window.landingCentersMap = L.map('landing-centers-map').setView([firstLat, firstLng], 6);
+
+    // Add tile layer (OpenStreetMap)
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+      maxZoom: 19
+    }).addTo(window.landingCentersMap);
+
+    // Add markers for each valid landing center
+    validData.forEach(row => {
+      const lat = parseFloat(row.LAT);
+      const lng = parseFloat(row.LONG);
+      
+      // Create popup content
+      const popupContent = `
+        <div style="min-width: 200px;">
+          <h6 class="fw-bold mb-2" style="color: #151269;">${escapeHtml(row.LANDING_CENTER || 'N/A')}</h6>
+          <div class="small">
+            <div class="mb-1"><strong>Region:</strong> ${escapeHtml(row.REGION || 'N/A')}</div>
+            <div class="mb-1"><strong>Province:</strong> ${escapeHtml(row.PROVINCE || 'N/A')}</div>
+            <div class="mb-1"><strong>City/Municipality:</strong> ${escapeHtml(row.CITY_MUN || 'N/A')}</div>
+            <div class="mb-1"><strong>Fishing Ground:</strong> ${escapeHtml(row.FISHING_GROUND || 'N/A')}</div>
+            <div class="mb-1"><strong>FMA:</strong> ${escapeHtml(row.FMA || 'N/A')}</div>
+            <div class="mt-2 pt-2 border-top">
+              <small class="text-muted">
+                <i class="bi bi-geo-alt"></i> ${lat.toFixed(6)}, ${lng.toFixed(6)}
+              </small>
+            </div>
+          </div>
+        </div>
+      `;
+
+      // Create marker with custom icon
+      const marker = L.marker([lat, lng], {
+        icon: L.icon({
+          iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-blue.png',
+          shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
+          iconSize: [25, 41],
+          iconAnchor: [12, 41],
+          popupAnchor: [1, -34],
+          shadowSize: [41, 41]
+        })
+      })
+      .addTo(window.landingCentersMap)
+      .bindPopup(popupContent);
+
+      window.mapMarkers.push(marker);
+    });
+
+    // Fit map bounds to show all markers
+    if (window.mapMarkers.length > 0) {
+      const group = new L.featureGroup(window.mapMarkers);
+      window.landingCentersMap.fitBounds(group.getBounds().pad(0.1));
+    }
+
+    console.log(`Successfully loaded ${window.mapMarkers.length} landing centers on map`);
+
+  } catch (err) {
+    console.error('Error loading landing centers:', err);
+    loadingEl.style.display = 'none';
+    errorEl.classList.remove('d-none');
+    errorMessageEl.textContent = err.message || 'Failed to load landing centers data. Please try again later.';
+  }
+}
+
 // Page-based search mapping
 const PAGE_SEARCH_MAP = {
   'structure': {
@@ -1390,6 +1564,13 @@ const PAGE_SEARCH_MAP = {
     keywords: ['fma profile', 'fma 06', 'fma 09', 'fma-06', 'fma-09', 'characteristics', 'measurement', 'profile', 'fma', 'statistics', 'data'],
     description: 'View detailed characteristics and measurements for FMA 06 and FMA 09.'
   },
+  'landingcenters': {
+    title: 'Landing Centers',
+    route: '#landingcenters',
+    icon: 'bi-geo-alt-fill',
+    keywords: ['landing center', 'landing centers', 'location', 'map', 'coordinates', 'fishing ground', 'latitude', 'longitude', 'geographic', 'marker', 'site'],
+    description: 'Interactive map showing landing centers locations across FMA 6 and FMA 9.'
+  },
   'learnmore': {
     title: 'Learn More',
     route: '#learnmore',
@@ -1415,7 +1596,8 @@ const SHEET_TO_PAGE_MAP = {
   'External_Directory': { page: 'directory', title: 'Directory (External)', icon: 'bi-people' },
   'NPMO_Directory': { page: 'directory', title: 'Directory (NPMO)', icon: 'bi-people' },
   'Reference_Files': { page: 'references', title: 'References', icon: 'bi-file-earmark-text' },
-  'FMA_Profile': { page: 'fmaprofile', title: 'FMA Profile', icon: 'bi-bar-chart-line' }
+  'FMA_Profile': { page: 'fmaprofile', title: 'FMA Profile', icon: 'bi-bar-chart-line' },
+  'Landing_Centers': { page: 'landingcenters', title: 'Landing Centers', icon: 'bi-geo-alt-fill' }
 };
 
 // Helper function to format content result
