@@ -23,7 +23,8 @@ const CONFIG = {
     MUNICIPALITIES: 'FMA_6_&_9_Municipalities',
     REFERENCE_FILES: 'Reference_Files',
     IMPLEMENTATION_STRUCTURE: 'Implementation_Structure',
-    FMA_PROFILE: 'FMA_Profile'
+    FMA_PROFILE: 'FMA_Profile',
+    LANDING_CENTERS: 'Landing_Centers'
   }
 };
 
