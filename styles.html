@@ -1695,45 +1695,79 @@
   }
 
   /* === LANDING CENTERS PAGE === */
-  /* Header icon animation */
-  .landing-centers-icon {
-    transition: all 0.3s ease;
-    animation: pulse 2s ease-in-out infinite;
+  /* Full screen layout container */
+  .landing-centers-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    height: 100vh;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    z-index: 1;
   }
-  
-  @keyframes pulse {
-    0%, 100% {
-      transform: scale(1);
-      box-shadow: 0 4px 15px rgba(21, 18, 105, 0.3);
-    }
-    50% {
-      transform: scale(1.05);
-      box-shadow: 0 6px 20px rgba(21, 18, 105, 0.4);
-    }
+
+  /* Map wrapper - full screen */
+  .landing-centers-map-wrapper {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    padding: 0;
   }
-  
-  .landing-centers-icon:hover {
-    transform: scale(1.1) !important;
-    box-shadow: 0 8px 25px rgba(21, 18, 105, 0.5) !important;
+
+  /* Full screen map */
+  .landing-centers-map {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1;
   }
-  
-  /* Sticky sidebar for filters */
+
+  /* Floating filter sidebar */
+  .landing-centers-filter-sidebar {
+    position: fixed;
+    top: 76px; /* Navbar height */
+    left: -350px; /* Hidden by default */
+    width: 320px;
+    height: calc(100vh - 76px - 60px); /* Full height minus navbar and footer */
+    max-height: calc(100vh - 136px);
+    z-index: 1050;
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    pointer-events: none;
+  }
+
+  .landing-centers-filter-sidebar.show {
+    left: 0;
+    pointer-events: auto;
+  }
+
+  .landing-centers-filter-sidebar .glass-panel {
+    height: 100%;
+    margin: 0;
+    border-radius: 0 16px 16px 0;
+  }
+
+  /* Filter sidebar content */
   .landing-centers-sidebar {
-    height: 800px;
-    max-height: 800px;
+    height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
     display: flex;
     flex-direction: column;
     width: 100%;
     box-sizing: border-box;
-    transition: all 0.3s ease;
   }
-  
-  .landing-centers-sidebar:hover {
-    box-shadow: 0 12px 40px rgba(31, 38, 135, 0.2) !important;
-  }
-  
+
   /* Ensure filters container fills available space */
   .landing-centers-sidebar #filters-container {
     flex: 1;
@@ -1744,14 +1778,55 @@
     width: 100%;
     box-sizing: border-box;
   }
-  
+
   /* Push filter summary to bottom */
   .landing-centers-sidebar #filter-summary {
     margin-top: auto;
     width: 100%;
     box-sizing: border-box;
   }
-  
+
+  /* Toggle filter button */
+  .landing-centers-filter-toggle {
+    position: fixed;
+    top: 90px;
+    left: 20px;
+    z-index: 1051;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #151269 0%, #0f1056 100%);
+    color: white;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(21, 18, 105, 0.4);
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    cursor: pointer;
+  }
+
+  .landing-centers-filter-toggle:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(21, 18, 105, 0.5);
+    background: linear-gradient(135deg, #0f1056 0%, #151269 100%);
+  }
+
+  .landing-centers-filter-toggle:active {
+    transform: scale(0.95);
+  }
+
+  /* Close button in filter sidebar */
+  #close-filter-sidebar {
+    transition: all 0.2s ease;
+  }
+
+  #close-filter-sidebar:hover {
+    background: rgba(21, 18, 105, 0.1) !important;
+    border-radius: 50%;
+    transform: rotate(90deg);
+  }
+
   /* Enhanced filter inputs styling */
   .landing-centers-sidebar .form-control,
   .landing-centers-sidebar .form-select {
@@ -1762,23 +1837,23 @@
     border-color: rgba(21, 18, 105, 0.2);
     transition: all 0.3s ease;
   }
-  
+
   .landing-centers-sidebar .form-control:focus,
   .landing-centers-sidebar .form-select:focus {
     border-color: #151269;
     box-shadow: 0 0 0 0.2rem rgba(21, 18, 105, 0.25);
     transform: translateY(-1px);
   }
-  
+
   /* Enhanced filter labels */
   .landing-centers-sidebar .form-label {
     transition: all 0.2s ease;
   }
-  
+
   .landing-centers-sidebar .form-label i {
     transition: all 0.2s ease;
   }
-  
+
   /* Filter items spacing */
   .landing-centers-sidebar .mb-3 {
     max-width: 100%;
@@ -1786,46 +1861,46 @@
     box-sizing: border-box;
     transition: all 0.2s ease;
   }
-  
+
   .landing-centers-sidebar .mb-3:hover .form-label {
     color: #0f1056;
   }
-  
+
   .landing-centers-sidebar .mb-3:hover .form-label i {
     transform: scale(1.1);
     color: #151269;
   }
-  
+
   /* Reset button styling */
   .landing-centers-sidebar #reset-filters {
     transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
     font-weight: 600;
     border-radius: 8px;
   }
-  
+
   .landing-centers-sidebar #reset-filters:hover {
     background: #0f1056 !important;
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(21, 18, 105, 0.4);
   }
-  
+
   .landing-centers-sidebar #reset-filters:active {
     transform: translateY(0);
   }
-  
+
   .landing-centers-sidebar #reset-filters i {
     transition: transform 0.3s ease;
   }
-  
+
   .landing-centers-sidebar #reset-filters:hover i {
     transform: rotate(-180deg);
   }
-  
+
   /* Enhanced filter summary */
   .landing-centers-sidebar #filter-summary {
     transition: all 0.3s ease;
   }
-  
+
   .landing-centers-sidebar #filter-summary:hover {
     background: linear-gradient(135deg, rgba(21, 18, 105, 0.12) 0%, rgba(15, 16, 86, 0.08) 100%) !important;
     border-color: rgba(21, 18, 105, 0.25) !important;
@@ -1851,87 +1926,101 @@
   .landing-centers-sidebar::-webkit-scrollbar-thumb:hover {
     background: rgba(21, 18, 105, 0.5);
   }
-  
-  /* Map container enhancements */
-  #landing-centers-map {
-    border: 2px solid rgba(21, 18, 105, 0.1);
-    transition: all 0.3s ease;
-  }
-  
-  #landing-centers-map:hover {
-    border-color: rgba(21, 18, 105, 0.2);
-    box-shadow: 0 8px 25px rgba(21, 18, 105, 0.15);
-  }
-  
-  /* Map panel styling */
-  .landing-centers-map-panel {
-    transition: all 0.3s ease;
-  }
-  
-  .landing-centers-map-panel:hover {
-    box-shadow: 0 12px 40px rgba(31, 38, 135, 0.2) !important;
-  }
-  
-  /* Loading state improvements */
-  #map-loading {
-    min-height: 400px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-  }
-  
-  #map-loading .spinner-border {
-    width: 3.5rem;
-    height: 3.5rem;
-    border-width: 0.3em;
-    color: #151269;
-  }
-  
-  /* Enhanced info panel */
-  #map-info {
-    animation: fadeInUp 0.5s ease-out;
-  }
-  
+
   /* Filter section header styling */
   .landing-centers-sidebar .border-bottom {
     border-color: rgba(21, 18, 105, 0.15) !important;
   }
-  
-  .landing-centers-map-panel .border-bottom {
-    border-color: rgba(21, 18, 105, 0.15) !important;
-  }
-  
+
   /* Enhanced spacing for filter groups */
   .landing-centers-sidebar #filters-container > .mb-3:not(:last-child) {
     padding-bottom: 0.75rem;
     border-bottom: 1px solid rgba(21, 18, 105, 0.05);
     margin-bottom: 1rem !important;
   }
-  
 
-  /* Mobile adjustments for landing centers page */
+  /* Loading state */
+  .landing-centers-loading {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.9);
+    z-index: 10;
+  }
+
+  .landing-centers-loading .spinner-border {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-width: 0.3em;
+    color: #151269;
+  }
+
+  /* Error state */
+  .landing-centers-error {
+    position: absolute;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 1000;
+    max-width: 90%;
+  }
+
+  /* Floating info panel */
+  .landing-centers-info-panel {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    z-index: 1000;
+    max-width: 400px;
+    animation: fadeInUp 0.5s ease-out;
+  }
+
+  /* Adjust page content padding for landing centers */
+  body:has(.landing-centers-fullscreen) #page-content {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  /* Mobile adjustments */
   @media (max-width: 991.98px) {
-    .landing-centers-sidebar {
-      position: relative !important;
-      height: 600px;
-      max-height: 600px;
-      margin-bottom: 1.5rem;
+    .landing-centers-filter-sidebar {
+      width: 280px;
+      left: -280px;
     }
 
-    #landing-centers-map {
-      height: 600px !important;
+    .landing-centers-filter-toggle {
+      top: 80px;
+      left: 15px;
+      width: 45px;
+      height: 45px;
     }
   }
 
   @media (max-width: 767.98px) {
-    .landing-centers-sidebar {
-      height: 500px;
-      max-height: 500px;
+    .landing-centers-filter-sidebar {
+      width: 85vw;
+      max-width: 300px;
+      left: -85vw;
     }
 
-    #landing-centers-map {
-      height: 500px !important;
+    .landing-centers-info-panel {
+      bottom: 10px;
+      right: 10px;
+      left: 10px;
+      max-width: none;
+    }
+
+    .landing-centers-filter-toggle {
+      top: 75px;
+      left: 10px;
+      width: 40px;
+      height: 40px;
     }
   }
 </style>
