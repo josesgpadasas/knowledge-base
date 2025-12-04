@@ -1435,7 +1435,7 @@ function filterLandingCentersMarkers() {
   }
 }
 
-// Create a custom fish icon for markers
+// Create a custom fish icon for markers using Font Awesome
 function createFishIcon(L) {
   return L.divIcon({
     className: 'fish-marker-icon',
@@ -1446,30 +1446,22 @@ function createFishIcon(L) {
         display: flex;
         align-items: center;
         justify-content: center;
-        filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.3));
+        background: linear-gradient(135deg, rgba(9, 132, 227, 0.9) 0%, rgba(0, 206, 201, 0.9) 100%);
+        border-radius: 50%;
+        border: 3px solid white;
+        box-shadow: 0 3px 10px rgba(0, 0, 0, 0.4);
+        position: relative;
       ">
-        <svg width="50" height="50" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
-          <defs>
-            <linearGradient id="fishGradient" x1="0%" y1="0%" x2="100%" y2="100%">
-              <stop offset="0%" style="stop-color:#0984e3;stop-opacity:1" />
-              <stop offset="100%" style="stop-color:#00cec9;stop-opacity:1" />
-            </linearGradient>
-          </defs>
-          <!-- Fish body -->
-          <ellipse cx="50" cy="50" rx="30" ry="20" fill="url(#fishGradient)" stroke="white" stroke-width="3"/>
-          <!-- Fish tail -->
-          <path d="M 80 50 L 95 35 L 95 65 Z" fill="url(#fishGradient)" stroke="white" stroke-width="3"/>
-          <!-- Fish eye -->
-          <circle cx="60" cy="45" r="6" fill="white"/>
-          <circle cx="62" cy="43" r="3" fill="#151269"/>
-          <!-- Fish fin -->
-          <path d="M 40 35 Q 45 30 50 35 Q 45 40 40 35" fill="rgba(255, 255, 255, 0.5)" stroke="white" stroke-width="2"/>
-        </svg>
+        <i class="fas fa-fish" style="
+          font-size: 24px;
+          color: white;
+          text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+        "></i>
       </div>
     `,
     iconSize: [50, 50],
-    iconAnchor: [25, 25],
-    popupAnchor: [0, -25]
+    iconAnchor: [25, 50],
+    popupAnchor: [0, -50]
   });
 }
 
