@@ -1695,6 +1695,28 @@
   }
 
   /* === LANDING CENTERS PAGE === */
+  /* Header icon animation */
+  .landing-centers-icon {
+    transition: all 0.3s ease;
+    animation: pulse 2s ease-in-out infinite;
+  }
+  
+  @keyframes pulse {
+    0%, 100% {
+      transform: scale(1);
+      box-shadow: 0 4px 15px rgba(21, 18, 105, 0.3);
+    }
+    50% {
+      transform: scale(1.05);
+      box-shadow: 0 6px 20px rgba(21, 18, 105, 0.4);
+    }
+  }
+  
+  .landing-centers-icon:hover {
+    transform: scale(1.1) !important;
+    box-shadow: 0 8px 25px rgba(21, 18, 105, 0.5) !important;
+  }
+  
   /* Sticky sidebar for filters */
   .landing-centers-sidebar {
     height: 800px;
@@ -1705,6 +1727,11 @@
     flex-direction: column;
     width: 100%;
     box-sizing: border-box;
+    transition: all 0.3s ease;
+  }
+  
+  .landing-centers-sidebar:hover {
+    box-shadow: 0 12px 40px rgba(31, 38, 135, 0.2) !important;
   }
   
   /* Ensure filters container fills available space */
@@ -1725,20 +1752,85 @@
     box-sizing: border-box;
   }
   
-  /* Prevent horizontal overflow in filter inputs */
+  /* Enhanced filter inputs styling */
   .landing-centers-sidebar .form-control,
   .landing-centers-sidebar .form-select {
     max-width: 100%;
     overflow-x: hidden;
     word-wrap: break-word;
     box-sizing: border-box;
+    border-color: rgba(21, 18, 105, 0.2);
+    transition: all 0.3s ease;
   }
   
-  /* Ensure filter items don't cause overflow */
+  .landing-centers-sidebar .form-control:focus,
+  .landing-centers-sidebar .form-select:focus {
+    border-color: #151269;
+    box-shadow: 0 0 0 0.2rem rgba(21, 18, 105, 0.25);
+    transform: translateY(-1px);
+  }
+  
+  /* Enhanced filter labels */
+  .landing-centers-sidebar .form-label {
+    transition: all 0.2s ease;
+  }
+  
+  .landing-centers-sidebar .form-label i {
+    transition: all 0.2s ease;
+  }
+  
+  /* Filter items spacing */
   .landing-centers-sidebar .mb-3 {
     max-width: 100%;
     overflow-x: hidden;
     box-sizing: border-box;
+    transition: all 0.2s ease;
+  }
+  
+  .landing-centers-sidebar .mb-3:hover .form-label {
+    color: #0f1056;
+  }
+  
+  .landing-centers-sidebar .mb-3:hover .form-label i {
+    transform: scale(1.1);
+    color: #151269;
+  }
+  
+  /* Reset button styling */
+  .landing-centers-sidebar #reset-filters {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-weight: 600;
+    border-radius: 8px;
+  }
+  
+  .landing-centers-sidebar #reset-filters:hover {
+    background: #0f1056 !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(21, 18, 105, 0.4);
+  }
+  
+  .landing-centers-sidebar #reset-filters:active {
+    transform: translateY(0);
+  }
+  
+  .landing-centers-sidebar #reset-filters i {
+    transition: transform 0.3s ease;
+  }
+  
+  .landing-centers-sidebar #reset-filters:hover i {
+    transform: rotate(-180deg);
+  }
+  
+  /* Enhanced filter summary */
+  .landing-centers-sidebar #filter-summary {
+    transition: all 0.3s ease;
+  }
+  
+  .landing-centers-sidebar #filter-summary:hover {
+    background: linear-gradient(135deg, rgba(21, 18, 105, 0.12) 0%, rgba(15, 16, 86, 0.08) 100%) !important;
+    border-color: rgba(21, 18, 105, 0.25) !important;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(21, 18, 105, 0.15);
   }
 
   /* Custom scrollbar for sidebar */
@@ -1759,6 +1851,64 @@
   .landing-centers-sidebar::-webkit-scrollbar-thumb:hover {
     background: rgba(21, 18, 105, 0.5);
   }
+  
+  /* Map container enhancements */
+  #landing-centers-map {
+    border: 2px solid rgba(21, 18, 105, 0.1);
+    transition: all 0.3s ease;
+  }
+  
+  #landing-centers-map:hover {
+    border-color: rgba(21, 18, 105, 0.2);
+    box-shadow: 0 8px 25px rgba(21, 18, 105, 0.15);
+  }
+  
+  /* Map panel styling */
+  .landing-centers-map-panel {
+    transition: all 0.3s ease;
+  }
+  
+  .landing-centers-map-panel:hover {
+    box-shadow: 0 12px 40px rgba(31, 38, 135, 0.2) !important;
+  }
+  
+  /* Loading state improvements */
+  #map-loading {
+    min-height: 400px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  #map-loading .spinner-border {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-width: 0.3em;
+    color: #151269;
+  }
+  
+  /* Enhanced info panel */
+  #map-info {
+    animation: fadeInUp 0.5s ease-out;
+  }
+  
+  /* Filter section header styling */
+  .landing-centers-sidebar .border-bottom {
+    border-color: rgba(21, 18, 105, 0.15) !important;
+  }
+  
+  .landing-centers-map-panel .border-bottom {
+    border-color: rgba(21, 18, 105, 0.15) !important;
+  }
+  
+  /* Enhanced spacing for filter groups */
+  .landing-centers-sidebar #filters-container > .mb-3:not(:last-child) {
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid rgba(21, 18, 105, 0.05);
+    margin-bottom: 1rem !important;
+  }
+  
 
   /* Mobile adjustments for landing centers page */
   @media (max-width: 991.98px) {
