@@ -223,7 +223,7 @@ async function loadRecentActivities() {
             <div class="flex-grow-1 mb-3">
               <div class="mb-3">
                 <label class="small text-muted fw-semibold text-uppercase mb-1 d-flex align-items-center" style="font-size: 0.75rem; letter-spacing: 0.5px;">
-                  <i class="bi bi-geo-alt-fill me-1" style="color: var(--primary-dark);"></i>
+                  <i class="bi bi-geo-fill me-1" style="color: var(--primary-dark);"></i>
                   Location
                 </label>
                 <div class="text-muted small">
