@@ -1477,30 +1477,17 @@ function createLandingCenterMarker(row, L) {
     </div>
   `;
 
-  // Create custom marker with Bootstrap icon
+  // Create custom marker with Bootstrap icon (just the icon, no badge)
   const iconHtml = `
-    <div style="
-      background: linear-gradient(135deg, #151269 0%, #0f1056 100%);
-      border: 2px solid white;
-      border-radius: 50%;
-      width: 32px;
-      height: 32px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-      transition: transform 0.2s ease;
-    ">
-      <i class="bi bi-geo-alt-fill" style="color: white; font-size: 16px;"></i>
-    </div>
+    <i class="bi bi-geo-alt-fill" style="color: #151269; font-size: 24px; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));"></i>
   `;
 
   const customIcon = L.divIcon({
     html: iconHtml,
     className: 'custom-marker-icon',
-    iconSize: [32, 32],
-    iconAnchor: [16, 32],
-    popupAnchor: [0, -32]
+    iconSize: [24, 24],
+    iconAnchor: [12, 24],
+    popupAnchor: [0, -24]
   });
 
   return L.marker([lat, lng], {
