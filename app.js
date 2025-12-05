@@ -5,6 +5,7 @@ const ROUTES = {
   'home': 'home',
   'structure': 'structure',
   'municipalities': 'municipalities',
+  'fmamunicipalities': 'fmamunicipalities',
   'activities': 'activities',
   'directory': 'directory',
   'references': 'references',
@@ -150,6 +151,7 @@ function initPage(page, hash) {
   }
   if (page === 'structure') loadStructure();
   if (page === 'municipalities') loadMunicipalities();
+  if (page === 'fmamunicipalities') loadFMAMunicipalities();
   if (page === 'activities') loadActivities();
   if (page === 'directory') loadDirectory('internal');
   if (page === 'references') loadReferences();
@@ -553,6 +555,208 @@ async function loadMunicipalities() {
     if (table) {
       table.classList.remove('table-loading');
       console.log('Table loading class removed');
+    }
+  }
+}
+
+async function loadFMAMunicipalities() {
+  // Wait a bit for DOM to be ready
+  let tbody = document.querySelector('#fma-municipalities-table tbody');
+  let retries = 0;
+  while (!tbody && retries < 10) {
+    await new Promise(resolve => setTimeout(resolve, 100));
+    tbody = document.querySelector('#fma-municipalities-table tbody');
+    retries++;
+  }
+  
+  const table = tbody ? tbody.closest('table') : null;
+  const filterPlaceholder = document.getElementById('filter-container-placeholder');
+  
+  if (!tbody) {
+    console.error('FMA Municipalities table tbody not found after retries');
+    return;
+  }
+  
+  if (table) table.classList.add('table-loading');
+
+  try {
+    console.log('Loading FMA municipalities data...');
+    const data = await dataService.getFMAMunicipalities();
+    console.log('FMA Municipalities data received:', data);
+    
+    if (!data || data.length === 0) {
+      console.warn('No FMA municipalities data available');
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4" class="text-center text-muted py-5">
+            <i class="bi bi-inbox display-6 d-block mb-2 opacity-50"></i>
+            <p class="mb-0">No FMA municipalities data available.</p>
+            <small class="text-muted">Please check that the FMA_Municipalities sheet exists and has data.</small>
+          </td>
+        </tr>
+      `;
+      if (table) table.classList.remove('table-loading');
+      return;
+    }
+    
+    console.log('First row sample:', data[0]);
+    
+    // Extract unique FMAs, regions & provinces
+    const fmas = [...new Set(data.map(r => r.FMA).filter(Boolean))].sort();
+    const regions = [...new Set(data.map(r => r.REGION).filter(Boolean))].sort();
+    const provincesByRegion = {};
+    data.forEach(row => {
+      const region = row.REGION;
+      const province = row.PROVINCE;
+      if (region) {
+        if (!provincesByRegion[region]) provincesByRegion[region] = new Set();
+        if (province) provincesByRegion[region].add(province);
+      }
+    });
+    
+    // Convert sets to sorted arrays
+    Object.keys(provincesByRegion).forEach(region => {
+      provincesByRegion[region] = [...provincesByRegion[region]].sort();
+    });
+
+    // Helper function to format FMA ID
+    const formatFMA = (fma) => {
+      if (!fma) return '-';
+      return fma.toUpperCase().startsWith('FMA') ? fma : `FMA ${fma}`;
+    };
+
+    // === FILTER CONTROLS ===
+    const filterHTML = `
+      <div class="row g-3 mb-4">
+        <div class="col-md-4">
+          <label class="form-label fw-bold" style="color: #151269;">
+            <i class="bi bi-diagram-3 me-1"></i>Filter by FMA
+          </label>
+          <select id="filter-fma" class="form-select shadow-sm">
+            <option value="">All FMAs</option>
+            ${fmas.map(f => `<option value="${escapeHtml(f)}">${escapeHtml(formatFMA(f))}</option>`).join('')}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-bold" style="color: #151269;">
+            <i class="bi bi-geo-alt-fill me-1"></i>Filter by Region
+          </label>
+          <select id="filter-region" class="form-select shadow-sm">
+            <option value="">All Regions</option>
+            ${regions.map(r => `<option value="${escapeHtml(r)}">${escapeHtml(r)}</option>`).join('')}
+          </select>
+        </div>
+        <div class="col-md-4">
+          <label class="form-label fw-bold" style="color: #151269;">
+            <i class="bi bi-building me-1"></i>Filter by Province
+          </label>
+          <select id="filter-province" class="form-select shadow-sm" disabled>
+            <option value="">All Provinces (select region first)</option>
+          </select>
+        </div>
+      </div>
+    `;
+
+    // Insert filters in placeholder
+    if (filterPlaceholder) {
+      filterPlaceholder.innerHTML = filterHTML;
+    }
+
+    const fmaSelect = document.getElementById('filter-fma');
+    const regionSelect = document.getElementById('filter-region');
+    const provinceSelect = document.getElementById('filter-province');
+
+    // Populate provinces when region changes
+    if (regionSelect) {
+      regionSelect.addEventListener('change', () => {
+        const selectedRegion = regionSelect.value;
+        if (provinceSelect) {
+          provinceSelect.innerHTML = '<option value="">All Provinces</option>';
+          provinceSelect.disabled = !selectedRegion;
+
+          if (selectedRegion && provincesByRegion[selectedRegion]) {
+            provincesByRegion[selectedRegion].forEach(prov => {
+              const opt = document.createElement('option');
+              opt.value = prov;
+              opt.textContent = prov;
+              provinceSelect.appendChild(opt);
+            });
+          }
+        }
+        renderTable();
+      });
+    }
+
+    if (provinceSelect) {
+      provinceSelect.addEventListener('change', renderTable);
+    }
+
+    if (fmaSelect) {
+      fmaSelect.addEventListener('change', renderTable);
+    }
+
+    // === RENDER FUNCTION ===
+    function renderTable() {
+      const fma = fmaSelect?.value || '';
+      const region = regionSelect?.value || '';
+      const province = provinceSelect?.value || '';
+
+      let filtered = data;
+      if (fma) filtered = filtered.filter(r => r.FMA === fma);
+      if (region) filtered = filtered.filter(r => r.REGION === region);
+      if (province) filtered = filtered.filter(r => r.PROVINCE === province);
+
+      const html = filtered.length ? filtered.map(row => {
+        const fma = row.FMA || '';
+        const region = row.REGION || '';
+        const province = row.PROVINCE || '';
+        const cityMun = row.CITY_MUN || '';
+        
+        return `
+        <tr style="transition: background-color 0.2s ease;">
+          <td class="ps-4">
+            <span class="badge rounded-pill px-3 py-2 text-white fw-semibold" style="background: #0f1056;">
+              ${escapeHtml(formatFMA(fma))}
+            </span>
+          </td>
+          <td>${escapeHtml(region || '-')}</td>
+          <td>${escapeHtml(province || '-')}</td>
+          <td class="pe-4 fw-semibold">${escapeHtml(cityMun || '-')}</td>
+        </tr>
+      `;
+      }).join('') : `
+        <tr>
+          <td colspan="4" class="text-center text-muted py-5">
+            <i class="bi bi-inbox display-6 d-block mb-2 opacity-50"></i>
+            <p class="mb-0">No FMA municipalities match your filters</p>
+          </td>
+        </tr>
+      `;
+      
+      tbody.innerHTML = html;
+    }
+
+    // Initial render
+    renderTable();
+
+  } catch (err) {
+    console.error('Load FMA municipalities error:', err);
+    const errorMessage = err.message || 'Unknown error';
+    if (tbody) {
+      tbody.innerHTML = `
+        <tr>
+          <td colspan="4" class="text-danger text-center py-4">
+            <i class="bi bi-exclamation-triangle display-6 d-block mb-2"></i>
+            <p class="mb-0">Failed to load FMA municipalities data.</p>
+            <small class="text-muted d-block mt-2">Error: ${escapeHtml(errorMessage)}</small>
+            <small class="text-muted">Check the browser console (F12) for more details.</small>
+          </td>
+        </tr>
+      `;
+    }
+  } finally {
+    if (table) {
+      table.classList.remove('table-loading');
     }
   }
 }
