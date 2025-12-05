@@ -709,6 +709,14 @@ async function loadFMAMunicipalities() {
     const fmaSelect = document.getElementById('filter-fma');
     const regionSelect = document.getElementById('filter-region');
     const provinceSelect = document.getElementById('filter-province');
+    const paginationEl = document.getElementById('fma-pagination');
+    const paginationControls = document.getElementById('fma-pagination-controls');
+    const paginationInfo = document.getElementById('fma-pagination-info');
+    const itemsPerPageSelect = document.getElementById('fma-items-per-page');
+    
+    // Pagination state
+    let currentPage = 1;
+    let itemsPerPage = 20;
 
     // Populate provinces when region changes
     if (regionSelect) {
@@ -727,16 +735,46 @@ async function loadFMAMunicipalities() {
             });
           }
         }
+        currentPage = 1; // Reset to first page on filter change
         renderTable();
       });
     }
 
     if (provinceSelect) {
-      provinceSelect.addEventListener('change', renderTable);
+      provinceSelect.addEventListener('change', () => {
+        currentPage = 1; // Reset to first page on filter change
+        renderTable();
+      });
     }
 
     if (fmaSelect) {
-      fmaSelect.addEventListener('change', renderTable);
+      fmaSelect.addEventListener('change', () => {
+        currentPage = 1; // Reset to first page on filter change
+        renderTable();
+      });
+    }
+    
+    // Items per page change handler
+    if (itemsPerPageSelect) {
+      itemsPerPageSelect.addEventListener('change', () => {
+        itemsPerPage = parseInt(itemsPerPageSelect.value) || 20;
+        currentPage = 1; // Reset to first page when changing items per page
+        renderTable();
+      });
+    }
+    
+    // Pagination button click handler (using event delegation)
+    if (paginationControls) {
+      paginationControls.addEventListener('click', (e) => {
+        const pageLink = e.target.closest('a[data-page]');
+        if (pageLink) {
+          e.preventDefault();
+          const pageNum = parseInt(pageLink.dataset.page);
+          if (pageNum && !pageLink.closest('.disabled')) {
+            goToPage(pageNum);
+          }
+        }
+      });
     }
 
     // Helper function to check if NSAP is true
@@ -763,18 +801,133 @@ async function loadFMAMunicipalities() {
       return false;
     }
 
-    // === RENDER FUNCTION ===
-    function renderTable() {
+    // Function to render pagination controls
+    const renderPagination = (totalItems, currentPageNum, itemsPerPageNum) => {
+      const totalPages = Math.ceil(totalItems / itemsPerPageNum);
+      
+      if (totalPages <= 1) {
+        if (paginationEl) paginationEl.classList.add('d-none');
+        return;
+      }
+      
+      if (paginationEl) paginationEl.classList.remove('d-none');
+      
+      // Update pagination info
+      const start = totalItems === 0 ? 0 : (currentPageNum - 1) * itemsPerPageNum + 1;
+      const end = Math.min(currentPageNum * itemsPerPageNum, totalItems);
+      if (paginationInfo) {
+        paginationInfo.textContent = `Showing ${start}-${end} of ${totalItems}`;
+      }
+      
+      // Build pagination buttons
+      let paginationHTML = '';
+      
+      // Previous button
+      paginationHTML += `
+        <li class="page-item ${currentPageNum === 1 ? 'disabled' : ''}">
+          <a class="page-link" href="javascript:void(0)" data-page="${currentPageNum - 1}" style="color: #151269;">
+            <i class="bi bi-chevron-left"></i>
+          </a>
+        </li>
+      `;
+      
+      // Page number buttons
+      const maxVisiblePages = 5;
+      let startPage = Math.max(1, currentPageNum - Math.floor(maxVisiblePages / 2));
+      let endPage = Math.min(totalPages, startPage + maxVisiblePages - 1);
+      
+      if (endPage - startPage < maxVisiblePages - 1) {
+        startPage = Math.max(1, endPage - maxVisiblePages + 1);
+      }
+      
+      if (startPage > 1) {
+        paginationHTML += `
+          <li class="page-item">
+            <a class="page-link" href="javascript:void(0)" data-page="1" style="color: #151269;">1</a>
+          </li>
+        `;
+        if (startPage > 2) {
+          paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+      }
+      
+      for (let i = startPage; i <= endPage; i++) {
+        paginationHTML += `
+          <li class="page-item ${i === currentPageNum ? 'active' : ''}">
+            <a class="page-link" href="javascript:void(0)" data-page="${i}" 
+               style="${i === currentPageNum ? 'background: #151269; border-color: #151269; color: white;' : 'color: #151269;'}">
+              ${i}
+            </a>
+          </li>
+        `;
+      }
+      
+      if (endPage < totalPages) {
+        if (endPage < totalPages - 1) {
+          paginationHTML += `<li class="page-item disabled"><span class="page-link">...</span></li>`;
+        }
+        paginationHTML += `
+          <li class="page-item">
+            <a class="page-link" href="javascript:void(0)" data-page="${totalPages}" style="color: #151269;">${totalPages}</a>
+          </li>
+        `;
+      }
+      
+      // Next button
+      paginationHTML += `
+        <li class="page-item ${currentPageNum === totalPages ? 'disabled' : ''}">
+          <a class="page-link" href="javascript:void(0)" data-page="${currentPageNum + 1}" style="color: #151269;">
+            <i class="bi bi-chevron-right"></i>
+          </a>
+        </li>
+      `;
+      
+      if (paginationControls) {
+        paginationControls.innerHTML = paginationHTML;
+      }
+    };
+    
+    // Function to go to a specific page
+    const goToPage = (pageNum) => {
+      const filtered = getFilteredData();
+      const totalPages = Math.ceil(filtered.length / itemsPerPage);
+      if (pageNum >= 1 && pageNum <= totalPages) {
+        currentPage = pageNum;
+        renderTable();
+      }
+    };
+    
+    // Function to get filtered data (without pagination)
+    const getFilteredData = () => {
       const fma = fmaSelect?.value || '';
       const region = regionSelect?.value || '';
       const province = provinceSelect?.value || '';
-
+      
       let filtered = data;
       if (fma) filtered = filtered.filter(r => r.FMA === fma);
       if (region) filtered = filtered.filter(r => r.REGION === region);
       if (province) filtered = filtered.filter(r => r.PROVINCE === province);
+      
+      return filtered;
+    };
 
-      const html = filtered.length ? filtered.map(row => {
+    // === RENDER FUNCTION ===
+    function renderTable() {
+      let filtered = getFilteredData();
+      const totalItems = filtered.length;
+      const totalPages = Math.ceil(totalItems / itemsPerPage);
+      
+      // Reset to page 1 if current page is out of bounds
+      if (currentPage > totalPages && totalPages > 0) {
+        currentPage = 1;
+      }
+      
+      // Get paginated data
+      const startIndex = (currentPage - 1) * itemsPerPage;
+      const endIndex = startIndex + itemsPerPage;
+      const paginatedData = filtered.slice(startIndex, endIndex);
+
+      const html = paginatedData.length ? paginatedData.map(row => {
         const fma = row.FMA || '';
         const region = row.REGION || '';
         const province = row.PROVINCE || '';
@@ -814,7 +967,10 @@ async function loadFMAMunicipalities() {
       
       tbody.innerHTML = html;
       
-      // Update summary with filtered data
+      // Render pagination
+      renderPagination(totalItems, currentPage, itemsPerPage);
+      
+      // Update summary with filtered data (all filtered, not just paginated)
       renderSummary(filtered);
     }
 
