@@ -2136,6 +2136,19 @@
   }
 
 
+  /* Custom marker icon styling */
+  .custom-marker-icon {
+    background: transparent !important;
+    border: none !important;
+  }
+
+  /* Marker hover effect */
+  .leaflet-marker-icon:hover {
+    transform: scale(1.15);
+    z-index: 1000 !important;
+    transition: transform 0.2s ease;
+  }
+
   /* Custom scrollbar for filter sidebar */
   .landing-centers-sidebar::-webkit-scrollbar {
     width: 6px;
