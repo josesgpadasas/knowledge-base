@@ -600,6 +600,16 @@ async function loadFMAMunicipalities() {
     }
     
     console.log('First row sample:', data[0]);
+    console.log('Available columns in first row:', Object.keys(data[0] || {}));
+    
+    // Debug: Check NSAP column values
+    const nsapSample = data.slice(0, 5).map(r => ({ 
+      city: r.CITY_MUN, 
+      nsap: r.NSAP, 
+      nsapType: typeof r.NSAP,
+      nsapString: r.NSAP ? r.NSAP.toString() : 'empty'
+    }));
+    console.log('NSAP sample values (first 5 rows):', nsapSample);
     
     // Extract unique FMAs, regions & provinces
     const fmas = [...new Set(data.map(r => r.FMA).filter(Boolean))].sort();
@@ -711,10 +721,43 @@ async function loadFMAMunicipalities() {
         const region = row.REGION || '';
         const province = row.PROVINCE || '';
         const cityMun = row.CITY_MUN || '';
-        const nsap = row.NSAP || '';
         
-        // Check if NSAP is TRUE (handle various formats: TRUE, true, "TRUE", "true", etc.)
-        const isNSAP = nsap && (nsap.toString().toUpperCase().trim() === 'TRUE' || nsap.toString().toLowerCase().trim() === 'true');
+        // Check NSAP column - handle different column name variations (case-insensitive)
+        // Try multiple possible column names
+        const nsap = row.NSAP || row.nsap || row.Nsap || 
+                     (() => {
+                       // Case-insensitive search for NSAP column
+                       const keys = Object.keys(row);
+                       const nsapKey = keys.find(k => k.toUpperCase() === 'NSAP');
+                       return nsapKey ? row[nsapKey] : '';
+                     })();
+        
+        // Check if NSAP is TRUE (handle various formats from Google Sheets)
+        // Could be: TRUE, true, "TRUE", "true", "Yes", "YES", true (boolean), "1", 1, etc.
+        let isNSAP = false;
+        if (nsap !== null && nsap !== undefined && nsap !== '' && nsap !== '-') {
+          const nsapStr = String(nsap).trim().toUpperCase();
+          isNSAP = nsapStr === 'TRUE' || 
+                   nsapStr === 'YES' || 
+                   nsapStr === '1' ||
+                   nsapStr === 'Y' ||
+                   nsap === true ||
+                   nsap === 1 ||
+                   nsapStr === '✓' ||
+                   nsapStr === 'CHECK' ||
+                   nsapStr === 'X';
+          
+          // Debug: Log NSAP values for first few rows only
+          if (filtered.indexOf(row) < 3) {
+            console.log(`NSAP check for "${cityMun}":`, {
+              raw: nsap,
+              type: typeof nsap,
+              string: nsapStr,
+              isNSAP: isNSAP,
+              allKeys: Object.keys(row)
+            });
+          }
+        }
         
         return `
         <tr style="transition: background-color 0.2s ease;">
@@ -726,12 +769,14 @@ async function loadFMAMunicipalities() {
           <td>${escapeHtml(region || '-')}</td>
           <td>${escapeHtml(province || '-')}</td>
           <td class="pe-4 fw-semibold">
-            ${escapeHtml(cityMun || '-')}
-            ${isNSAP ? `
-              <span class="badge rounded-pill px-2 py-1 ms-2" style="background: #00b894; color: white; font-size: 0.75rem;" title="NSAP Monitored Municipality">
-                <i class="bi bi-check-circle-fill me-1"></i>NSAP
-              </span>
-            ` : ''}
+            <div class="d-flex align-items-center">
+              <span>${escapeHtml(cityMun || '-')}</span>
+              ${isNSAP ? `
+                <span class="badge rounded-pill px-2 py-1 ms-2" style="background: #00b894; color: white; font-size: 0.75rem; white-space: nowrap;" title="NSAP Monitored Municipality">
+                  <i class="bi bi-check-circle-fill me-1"></i>NSAP
+                </span>
+              ` : ''}
+            </div>
           </td>
         </tr>
       `;
