@@ -562,10 +562,12 @@ async function loadMunicipalities() {
 async function loadFMAMunicipalities() {
   // Wait a bit for DOM to be ready
   let tbody = document.querySelector('#fma-municipalities-table tbody');
+  let summaryContainer = document.getElementById('fma-municipalities-summary');
   let retries = 0;
-  while (!tbody && retries < 10) {
+  while ((!tbody || !summaryContainer) && retries < 10) {
     await new Promise(resolve => setTimeout(resolve, 100));
-    tbody = document.querySelector('#fma-municipalities-table tbody');
+    if (!tbody) tbody = document.querySelector('#fma-municipalities-table tbody');
+    if (!summaryContainer) summaryContainer = document.getElementById('fma-municipalities-summary');
     retries++;
   }
   
@@ -575,6 +577,10 @@ async function loadFMAMunicipalities() {
   if (!tbody) {
     console.error('FMA Municipalities table tbody not found after retries');
     return;
+  }
+  
+  if (!summaryContainer) {
+    console.error('FMA Municipalities summary container not found after retries');
   }
   
   if (table) table.classList.add('table-loading');
@@ -814,40 +820,52 @@ async function loadFMAMunicipalities() {
 
     // === SUMMARY RENDER FUNCTION ===
     function renderSummary(filteredData) {
-      const summaryContainer = document.getElementById('fma-municipalities-summary');
-      if (!summaryContainer) return;
+      try {
+        const summaryContainer = document.getElementById('fma-municipalities-summary');
+        if (!summaryContainer) {
+          console.error('Summary container #fma-municipalities-summary not found. Available elements:', 
+            document.querySelectorAll('[id*="summary"]'));
+          return;
+        }
+        
+        console.log('Rendering summary with', filteredData ? filteredData.length : 0, 'items');
+        
+        if (!filteredData || !Array.isArray(filteredData)) {
+          console.error('Invalid filteredData passed to renderSummary:', filteredData);
+          filteredData = [];
+        }
 
-      // Calculate statistics
-      const totalMunicipalities = filteredData.length;
-      const nsapMonitored = filteredData.filter(row => isNSAPMonitored(row)).length;
+        // Calculate statistics
+        const totalMunicipalities = filteredData.length;
+        const nsapMonitored = filteredData.filter(row => isNSAPMonitored(row)).length;
 
-      // Count by Region (only show regions with count > 0)
-      const byRegion = {};
-      filteredData.forEach(row => {
-        const region = row.REGION || 'Unknown';
-        byRegion[region] = (byRegion[region] || 0) + 1;
-      });
-      const regionStats = Object.entries(byRegion)
-        .filter(([region, count]) => count > 0)
-        .sort((a, b) => b[1] - a[1]);
-
-      // Count by FMA
-      const byFMA = {};
-      filteredData.forEach(row => {
-        const fma = row.FMA || 'Unknown';
-        byFMA[fma] = (byFMA[fma] || 0) + 1;
-      });
-      const fmaStats = Object.entries(byFMA)
-        .filter(([fma, count]) => count > 0)
-        .sort((a, b) => {
-          // Sort by FMA number if possible
-          const aNum = parseInt(a[0]) || 999;
-          const bNum = parseInt(b[0]) || 999;
-          return aNum - bNum;
+        // Count by Region (only show regions with count > 0)
+        const byRegion = {};
+        filteredData.forEach(row => {
+          const region = row.REGION || 'Unknown';
+          byRegion[region] = (byRegion[region] || 0) + 1;
         });
+        const regionStats = Object.entries(byRegion)
+          .filter(([region, count]) => count > 0)
+          .sort((a, b) => b[1] - a[1]);
 
-      // Build summary HTML
-      const summaryHTML = `
+        // Count by FMA
+        const byFMA = {};
+        filteredData.forEach(row => {
+          const fma = row.FMA || 'Unknown';
+          byFMA[fma] = (byFMA[fma] || 0) + 1;
+        });
+        const fmaStats = Object.entries(byFMA)
+          .filter(([fma, count]) => count > 0)
+          .sort((a, b) => {
+            // Sort by FMA number if possible
+            const aNum = parseInt(a[0]) || 999;
+            const bNum = parseInt(b[0]) || 999;
+            return aNum - bNum;
+          });
+
+        // Build summary HTML
+        const summaryHTML = `
         <div class="vstack gap-4">
           <!-- Total Municipalities -->
           <div>
@@ -937,11 +955,31 @@ async function loadFMAMunicipalities() {
         </div>
       `;
 
-      summaryContainer.innerHTML = summaryHTML;
+        summaryContainer.innerHTML = summaryHTML;
+      } catch (err) {
+        console.error('Error in renderSummary:', err);
+        const errContainer = document.getElementById('fma-municipalities-summary');
+        if (errContainer) {
+          errContainer.innerHTML = `
+            <div class="alert alert-danger">
+              <small>Error loading summary: ${err.message}</small>
+            </div>
+          `;
+        }
+      }
     }
 
     // Initial render (will also call renderSummary)
     renderTable();
+    
+    // Ensure summary is rendered (in case renderSummary wasn't called)
+    setTimeout(() => {
+      const summaryContainer = document.getElementById('fma-municipalities-summary');
+      if (summaryContainer && summaryContainer.innerHTML.includes('Loading summary')) {
+        console.log('Summary still showing loading state, forcing render...');
+        renderSummary(data);
+      }
+    }, 500);
 
   } catch (err) {
     console.error('Load FMA municipalities error:', err);
