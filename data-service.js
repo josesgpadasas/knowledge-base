@@ -143,6 +143,11 @@ class DataService {
     return this.getSheetData(this.config.SHEETS.MUNICIPALITIES);
   }
 
+  // Get FMA municipalities
+  async getFMAMunicipalities() {
+    return this.getSheetData(this.config.SHEETS.FMA_MUNICIPALITIES);
+  }
+
   // Get activities
   async getActivities() {
     return this.getSheetData(this.config.SHEETS.ACTIVITIES);
