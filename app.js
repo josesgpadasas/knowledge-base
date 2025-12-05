@@ -711,6 +711,10 @@ async function loadFMAMunicipalities() {
         const region = row.REGION || '';
         const province = row.PROVINCE || '';
         const cityMun = row.CITY_MUN || '';
+        const nsap = row.NSAP || '';
+        
+        // Check if NSAP is TRUE (handle various formats: TRUE, true, "TRUE", "true", etc.)
+        const isNSAP = nsap && (nsap.toString().toUpperCase().trim() === 'TRUE' || nsap.toString().toLowerCase().trim() === 'true');
         
         return `
         <tr style="transition: background-color 0.2s ease;">
@@ -721,7 +725,14 @@ async function loadFMAMunicipalities() {
           </td>
           <td>${escapeHtml(region || '-')}</td>
           <td>${escapeHtml(province || '-')}</td>
-          <td class="pe-4 fw-semibold">${escapeHtml(cityMun || '-')}</td>
+          <td class="pe-4 fw-semibold">
+            ${escapeHtml(cityMun || '-')}
+            ${isNSAP ? `
+              <span class="badge rounded-pill px-2 py-1 ms-2" style="background: #00b894; color: white; font-size: 0.75rem;" title="NSAP Monitored Municipality">
+                <i class="bi bi-check-circle-fill me-1"></i>NSAP
+              </span>
+            ` : ''}
+          </td>
         </tr>
       `;
       }).join('') : `
