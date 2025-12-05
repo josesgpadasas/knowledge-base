@@ -223,7 +223,7 @@ async function loadRecentActivities() {
             <div class="flex-grow-1 mb-3">
               <div class="mb-3">
                 <label class="small text-muted fw-semibold text-uppercase mb-1 d-flex align-items-center" style="font-size: 0.75rem; letter-spacing: 0.5px;">
-                  <i class="bi bi-geo-fill me-1" style="color: var(--primary-dark);"></i>
+                  <i class="bi bi-geo-alt-fill me-1" style="color: var(--primary-dark);"></i>
                   Location
                 </label>
                 <div class="text-muted small">
@@ -1479,7 +1479,7 @@ function createLandingCenterMarker(row, L) {
 
   // Create custom marker with Bootstrap icon (just the icon, no badge)
   const iconHtml = `
-    <i class="bi bi-geo-fill" style="color: #151269; font-size: 24px; filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.3));"></i>
+    <i class="bi bi-geo-fill" style="color: #C1272E; font-size: 24px;"></i>
   `;
 
   const customIcon = L.divIcon({
