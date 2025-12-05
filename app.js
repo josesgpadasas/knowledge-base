@@ -1477,15 +1477,34 @@ function createLandingCenterMarker(row, L) {
     </div>
   `;
 
+  // Create custom marker with Bootstrap icon
+  const iconHtml = `
+    <div style="
+      background: linear-gradient(135deg, #151269 0%, #0f1056 100%);
+      border: 2px solid white;
+      border-radius: 50%;
+      width: 32px;
+      height: 32px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+      transition: transform 0.2s ease;
+    ">
+      <i class="bi bi-geo-alt-fill" style="color: white; font-size: 16px;"></i>
+    </div>
+  `;
+
+  const customIcon = L.divIcon({
+    html: iconHtml,
+    className: 'custom-marker-icon',
+    iconSize: [32, 32],
+    iconAnchor: [16, 32],
+    popupAnchor: [0, -32]
+  });
+
   return L.marker([lat, lng], {
-    icon: L.icon({
-      iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
-      shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/0.7.7/images/marker-shadow.png',
-      iconSize: [15, 25],
-      iconAnchor: [7, 25],
-      popupAnchor: [1, -20],
-      shadowSize: [25, 25]
-    })
+    icon: customIcon
   }).bindPopup(popupContent);
 }
 
