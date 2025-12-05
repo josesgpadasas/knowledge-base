@@ -595,6 +595,34 @@ async function loadFMAMunicipalities() {
           </td>
         </tr>
       `;
+      // Show empty summary
+      const summaryContainer = document.getElementById('fma-municipalities-summary');
+      if (summaryContainer) {
+        summaryContainer.innerHTML = `
+          <div class="vstack gap-4">
+            <div>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fw-semibold" style="color: #151269;">Total No. of Municipalities</span>
+                <span class="badge rounded-pill px-3 py-2" style="background: #151269; color: white; font-size: 1rem;">0</span>
+              </div>
+            </div>
+            <div>
+              <div class="d-flex justify-content-between align-items-center mb-2">
+                <span class="fw-semibold" style="color: #151269;">No. of NSAP Monitored Municipalities</span>
+                <span class="badge rounded-pill px-3 py-2" style="background: #00b894; color: white; font-size: 1rem;">0</span>
+              </div>
+            </div>
+            <div>
+              <h6 class="fw-bold mb-3" style="color: #151269;">No. of Municipalities by Region</h6>
+              <p class="text-muted small mb-0">No data available</p>
+            </div>
+            <div>
+              <h6 class="fw-bold mb-3" style="color: #151269;">No. of Municipalities by FMA</h6>
+              <p class="text-muted small mb-0">No data available</p>
+            </div>
+          </div>
+        `;
+      }
       if (table) table.classList.remove('table-loading');
       return;
     }
@@ -705,6 +733,30 @@ async function loadFMAMunicipalities() {
       fmaSelect.addEventListener('change', renderTable);
     }
 
+    // Helper function to check if NSAP is true
+    function isNSAPMonitored(row) {
+      const nsap = row.NSAP || row.nsap || row.Nsap || 
+                   (() => {
+                     const keys = Object.keys(row);
+                     const nsapKey = keys.find(k => k.toUpperCase() === 'NSAP');
+                     return nsapKey ? row[nsapKey] : '';
+                   })();
+      
+      if (nsap !== null && nsap !== undefined && nsap !== '' && nsap !== '-') {
+        const nsapStr = String(nsap).trim().toUpperCase();
+        return nsapStr === 'TRUE' || 
+               nsapStr === 'YES' || 
+               nsapStr === '1' ||
+               nsapStr === 'Y' ||
+               nsap === true ||
+               nsap === 1 ||
+               nsapStr === '✓' ||
+               nsapStr === 'CHECK' ||
+               nsapStr === 'X';
+      }
+      return false;
+    }
+
     // === RENDER FUNCTION ===
     function renderTable() {
       const fma = fmaSelect?.value || '';
@@ -722,42 +774,7 @@ async function loadFMAMunicipalities() {
         const province = row.PROVINCE || '';
         const cityMun = row.CITY_MUN || '';
         
-        // Check NSAP column - handle different column name variations (case-insensitive)
-        // Try multiple possible column names
-        const nsap = row.NSAP || row.nsap || row.Nsap || 
-                     (() => {
-                       // Case-insensitive search for NSAP column
-                       const keys = Object.keys(row);
-                       const nsapKey = keys.find(k => k.toUpperCase() === 'NSAP');
-                       return nsapKey ? row[nsapKey] : '';
-                     })();
-        
-        // Check if NSAP is TRUE (handle various formats from Google Sheets)
-        // Could be: TRUE, true, "TRUE", "true", "Yes", "YES", true (boolean), "1", 1, etc.
-        let isNSAP = false;
-        if (nsap !== null && nsap !== undefined && nsap !== '' && nsap !== '-') {
-          const nsapStr = String(nsap).trim().toUpperCase();
-          isNSAP = nsapStr === 'TRUE' || 
-                   nsapStr === 'YES' || 
-                   nsapStr === '1' ||
-                   nsapStr === 'Y' ||
-                   nsap === true ||
-                   nsap === 1 ||
-                   nsapStr === '✓' ||
-                   nsapStr === 'CHECK' ||
-                   nsapStr === 'X';
-          
-          // Debug: Log NSAP values for first few rows only
-          if (filtered.indexOf(row) < 3) {
-            console.log(`NSAP check for "${cityMun}":`, {
-              raw: nsap,
-              type: typeof nsap,
-              string: nsapStr,
-              isNSAP: isNSAP,
-              allKeys: Object.keys(row)
-            });
-          }
-        }
+        const isNSAP = isNSAPMonitored(row);
         
         return `
         <tr style="transition: background-color 0.2s ease;">
@@ -790,9 +807,140 @@ async function loadFMAMunicipalities() {
       `;
       
       tbody.innerHTML = html;
+      
+      // Update summary with filtered data
+      renderSummary(filtered);
     }
 
-    // Initial render
+    // === SUMMARY RENDER FUNCTION ===
+    function renderSummary(filteredData) {
+      const summaryContainer = document.getElementById('fma-municipalities-summary');
+      if (!summaryContainer) return;
+
+      // Calculate statistics
+      const totalMunicipalities = filteredData.length;
+      const nsapMonitored = filteredData.filter(row => isNSAPMonitored(row)).length;
+
+      // Count by Region (only show regions with count > 0)
+      const byRegion = {};
+      filteredData.forEach(row => {
+        const region = row.REGION || 'Unknown';
+        byRegion[region] = (byRegion[region] || 0) + 1;
+      });
+      const regionStats = Object.entries(byRegion)
+        .filter(([region, count]) => count > 0)
+        .sort((a, b) => b[1] - a[1]);
+
+      // Count by FMA
+      const byFMA = {};
+      filteredData.forEach(row => {
+        const fma = row.FMA || 'Unknown';
+        byFMA[fma] = (byFMA[fma] || 0) + 1;
+      });
+      const fmaStats = Object.entries(byFMA)
+        .filter(([fma, count]) => count > 0)
+        .sort((a, b) => {
+          // Sort by FMA number if possible
+          const aNum = parseInt(a[0]) || 999;
+          const bNum = parseInt(b[0]) || 999;
+          return aNum - bNum;
+        });
+
+      // Build summary HTML
+      const summaryHTML = `
+        <div class="vstack gap-4">
+          <!-- Total Municipalities -->
+          <div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="fw-semibold" style="color: #151269;">Total No. of Municipalities</span>
+              <span class="badge rounded-pill px-3 py-2" style="background: #151269; color: white; font-size: 1rem;">
+                ${totalMunicipalities}
+              </span>
+            </div>
+          </div>
+
+          <!-- NSAP Monitored -->
+          <div>
+            <div class="d-flex justify-content-between align-items-center mb-2">
+              <span class="fw-semibold" style="color: #151269;">No. of NSAP Monitored Municipalities</span>
+              <span class="badge rounded-pill px-3 py-2" style="background: #00b894; color: white; font-size: 1rem;">
+                ${nsapMonitored}
+              </span>
+            </div>
+          </div>
+
+          <!-- By Region -->
+          <div>
+            <h6 class="fw-bold mb-3" style="color: #151269;">No. of Municipalities by Region</h6>
+            ${regionStats.length > 0 ? `
+              <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                  <thead>
+                    <tr>
+                      <th class="fw-semibold small" style="color: #151269 !important;">Region</th>
+                      <th class="text-end fw-semibold small" style="color: #151269 !important;">Count</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${regionStats.map(([region, count]) => `
+                      <tr>
+                        <td class="small">${escapeHtml(region)}</td>
+                        <td class="text-end">
+                          <span class="badge rounded-pill px-2" style="background: rgba(21, 18, 105, 0.1); color: #151269;">
+                            ${count}
+                          </span>
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            ` : `
+              <p class="text-muted small mb-0">No data available</p>
+            `}
+          </div>
+
+          <!-- By FMA -->
+          <div>
+            <h6 class="fw-bold mb-3" style="color: #151269;">No. of Municipalities by FMA</h6>
+            ${fmaStats.length > 0 ? `
+              <div class="table-responsive">
+                <table class="table table-sm mb-0">
+                  <thead>
+                    <tr>
+                      <th class="fw-semibold small" style="color: #151269 !important;">FMA</th>
+                      <th class="text-end fw-semibold small" style="color: #151269 !important;">Count</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    ${fmaStats.map(([fma, count]) => `
+                      <tr>
+                        <td class="small">
+                          <span class="badge rounded-pill px-2 py-1" style="background: #0f1056; color: white;">
+                            ${escapeHtml(formatFMA(fma))}
+                          </span>
+                        </td>
+                        <td class="text-end">
+                          <span class="badge rounded-pill px-2" style="background: rgba(21, 18, 105, 0.1); color: #151269;">
+                            ${count}
+                          </span>
+                        </td>
+                      </tr>
+                    `).join('')}
+                  </tbody>
+                </table>
+              </div>
+            ` : `
+              <p class="text-muted small mb-0">No data available</p>
+            `}
+          </div>
+        </div>
+      `;
+
+      summaryContainer.innerHTML = summaryHTML;
+    }
+
+    // Initial render (will also call renderSummary)
     renderTable();
 
   } catch (err) {
