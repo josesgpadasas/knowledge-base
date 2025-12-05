@@ -21,6 +21,7 @@ const CONFIG = {
     NPMO_DIRECTORY: 'NPMO_Directory',
     ACTIVITIES: 'Activities_Conducted',
     MUNICIPALITIES: 'FMA_6_&_9_Municipalities',
+    FMA_MUNICIPALITIES: 'FMA_Municipalities',
     REFERENCE_FILES: 'Reference_Files',
     IMPLEMENTATION_STRUCTURE: 'Implementation_Structure',
     FMA_PROFILE: 'FMA_Profile',
