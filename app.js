@@ -4,7 +4,6 @@
 const ROUTES = {
   'home': 'home',
   'structure': 'structure',
-  'municipalities': 'municipalities',
   'fmamunicipalities': 'fmamunicipalities',
   'activities': 'activities',
   'directory': 'directory',
@@ -150,7 +149,6 @@ function initPage(page, hash) {
     loadRecentActivities(); 
   }
   if (page === 'structure') loadStructure();
-  if (page === 'municipalities') loadMunicipalities();
   if (page === 'fmamunicipalities') loadFMAMunicipalities();
   if (page === 'activities') loadActivities();
   if (page === 'directory') loadDirectory('internal');
@@ -2424,12 +2422,12 @@ const PAGE_SEARCH_MAP = {
     keywords: ['structure', 'implementation', 'npmo', 'rpiu', 'fcu', 'organization', 'hierarchy', 'national', 'fma', 'regional', 'bfar', 'component'],
     description: 'View the organizational structure and implementation framework of the FishCRRM Component.'
   },
-  'municipalities': {
-    title: 'Municipalities',
-    route: '#municipalities',
-    icon: 'bi-geo-alt',
-    keywords: ['municipality', 'municipalities', 'location', 'region', 'province', 'fma', 'fma 6', 'fma 9', 'fma-06', 'fma-09', 'geography', 'area', 'coverage'],
-    description: 'Browse municipalities covered by FMA 6 and FMA 9, including regions and provinces.'
+  'fmamunicipalities': {
+    title: 'FMA Municipalities',
+    route: '#fmamunicipalities',
+    icon: 'bi-diagram-3',
+    keywords: ['municipality', 'municipalities', 'location', 'region', 'province', 'fma', 'fma 6', 'fma 9', 'fma-06', 'fma-09', 'geography', 'area', 'coverage', 'fma municipalities', 'comprehensive list'],
+    description: 'Comprehensive list of municipalities by FMA with regional and provincial breakdown.'
   },
   'activities': {
     title: 'Activities',
@@ -2844,8 +2842,8 @@ async function loadSearchResults(hash = '') {
               <a href="#structure" class="btn btn-outline-primary btn-sm">
                 <i class="bi bi-diagram-3 me-1"></i>Structure
               </a>
-              <a href="#municipalities" class="btn btn-outline-primary btn-sm">
-                <i class="bi bi-geo-alt me-1"></i>Municipalities
+              <a href="#fmamunicipalities" class="btn btn-outline-primary btn-sm">
+                <i class="bi bi-diagram-3 me-1"></i>FMA Municipalities
               </a>
               <a href="#activities" class="btn btn-outline-primary btn-sm">
                 <i class="bi bi-calendar-event me-1"></i>Activities
