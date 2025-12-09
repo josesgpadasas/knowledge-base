@@ -618,9 +618,15 @@ async function loadFMAMunicipalities() {
                 <span class="badge rounded-pill px-3 py-2" style="background: #00b894; color: white; font-size: 1rem;">0</span>
               </div>
             </div>
-            <div>
-              <h6 class="fw-bold mb-3" style="color: #151269;">Region and FMA Count</h6>
-              <p class="text-muted small mb-0">No data available</p>
+            <div class="row g-3">
+              <div class="col-6">
+                <h6 class="fw-bold mb-3" style="color: #151269;">Municipalities by Region</h6>
+                <p class="text-muted small mb-0">No data available</p>
+              </div>
+              <div class="col-6">
+                <h6 class="fw-bold mb-3" style="color: #151269;">Municipalities by FMA</h6>
+                <p class="text-muted small mb-0">No data available</p>
+              </div>
             </div>
           </div>
         `;
@@ -991,22 +997,44 @@ async function loadFMAMunicipalities() {
         const totalMunicipalities = filteredData.length;
         const nsapMonitored = filteredData.filter(row => isNSAPMonitored(row)).length;
 
-        // Count by Region and FMA (group by region, then count FMAs per region)
-        const byRegionAndFMA = {};
+        // Count by Region (municipality count per region)
+        const byRegion = {};
         filteredData.forEach(row => {
           const region = row.REGION || 'Unknown';
-          const fma = row.FMA || 'Unknown';
-          if (!byRegionAndFMA[region]) {
-            byRegionAndFMA[region] = new Set();
-          }
-          byRegionAndFMA[region].add(fma);
+          byRegion[region] = (byRegion[region] || 0) + 1;
         });
         
-        // Convert to array and sort alphabetically by region
-        const regionFMAStats = Object.entries(byRegionAndFMA)
-          .filter(([region, fmaSet]) => region !== 'Unknown' && fmaSet.size > 0)
-          .map(([region, fmaSet]) => [region, fmaSet.size])
-          .sort((a, b) => a[0].localeCompare(b[0])); // Alphabetical by region
+        // Sort regions alphabetically, but put BARMM at the bottom
+        const regionStats = Object.entries(byRegion)
+          .filter(([region, count]) => region !== 'Unknown' && count > 0)
+          .sort((a, b) => {
+            const aRegion = a[0].toUpperCase();
+            const bRegion = b[0].toUpperCase();
+            const aIsBARMM = aRegion.includes('BARMM') || aRegion.includes('BANGSAMORO');
+            const bIsBARMM = bRegion.includes('BARMM') || bRegion.includes('BANGSAMORO');
+            
+            // If both are BARMM or both are not, sort alphabetically
+            if (aIsBARMM === bIsBARMM) {
+              return a[0].localeCompare(b[0]);
+            }
+            // BARMM always goes to bottom
+            return aIsBARMM ? 1 : -1;
+          });
+
+        // Count by FMA (municipality count per FMA)
+        const byFMA = {};
+        filteredData.forEach(row => {
+          const fma = row.FMA || 'Unknown';
+          byFMA[fma] = (byFMA[fma] || 0) + 1;
+        });
+        const fmaStats = Object.entries(byFMA)
+          .filter(([fma, count]) => fma !== 'Unknown' && count > 0)
+          .sort((a, b) => {
+            // Sort by FMA number if possible
+            const aNum = parseInt(a[0]) || 999;
+            const bNum = parseInt(b[0]) || 999;
+            return aNum - bNum;
+          });
 
         // Build summary HTML
         const summaryHTML = `
@@ -1031,31 +1059,61 @@ async function loadFMAMunicipalities() {
             </div>
           </div>
 
-          <!-- Region and FMA Count Table -->
-          <div>
-            <h6 class="fw-bold mb-3" style="color: #151269;">Region and FMA Count</h6>
-            ${regionFMAStats.length > 0 ? `
-              <div class="table-responsive">
-                <table class="table table-sm mb-0">
-                  <thead>
-                    <tr>
-                      <th class="fw-semibold small" style="color: #151269 !important;">Region</th>
-                      <th class="text-end fw-semibold small" style="color: #151269 !important;">FMA Count</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    ${regionFMAStats.map(([region, count]) => `
+          <!-- Two Side-by-Side Tables -->
+          <div class="row g-3">
+            <!-- Municipalities by Region -->
+            <div class="col-6">
+              <h6 class="fw-bold mb-3" style="color: #151269;">Municipalities by Region</h6>
+              ${regionStats.length > 0 ? `
+                <div class="table-responsive">
+                  <table class="table table-sm mb-0">
+                    <thead>
                       <tr>
-                        <td class="small">${escapeHtml(region)}</td>
-                        <td class="text-end small">${count}</td>
+                        <th class="fw-semibold small" style="color: #151269 !important;">Region</th>
+                        <th class="text-end fw-semibold small" style="color: #151269 !important;">Count</th>
                       </tr>
-                    `).join('')}
-                  </tbody>
-                </table>
-              </div>
-            ` : `
-              <p class="text-muted small mb-0">No data available</p>
-            `}
+                    </thead>
+                    <tbody>
+                      ${regionStats.map(([region, count]) => `
+                        <tr>
+                          <td class="small">${escapeHtml(region)}</td>
+                          <td class="text-end small">${count}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              ` : `
+                <p class="text-muted small mb-0">No data available</p>
+              `}
+            </div>
+
+            <!-- Municipalities by FMA -->
+            <div class="col-6">
+              <h6 class="fw-bold mb-3" style="color: #151269;">Municipalities by FMA</h6>
+              ${fmaStats.length > 0 ? `
+                <div class="table-responsive">
+                  <table class="table table-sm mb-0">
+                    <thead>
+                      <tr>
+                        <th class="fw-semibold small" style="color: #151269 !important;">FMA</th>
+                        <th class="text-end fw-semibold small" style="color: #151269 !important;">Count</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      ${fmaStats.map(([fma, count]) => `
+                        <tr>
+                          <td class="small">${escapeHtml(formatFMA(fma))}</td>
+                          <td class="text-end small">${count}</td>
+                        </tr>
+                      `).join('')}
+                    </tbody>
+                  </table>
+                </div>
+              ` : `
+                <p class="text-muted small mb-0">No data available</p>
+              `}
+            </div>
           </div>
         </div>
       `;
